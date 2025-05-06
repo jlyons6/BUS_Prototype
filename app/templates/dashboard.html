@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UniSupport{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2 class="mb-4">Welcome, {{ current_user.username }}!</h2>
+        
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card appointment-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Quick Actions</h5>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('main.log_mood') }}" class="btn btn-primary">Log Today's Mood</a>
+                            <a href="{{ url_for('main.book_appointment') }}" class="btn btn-outline-primary">Book Appointment</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Today's Mood</h5>
+                        {% if student and student.mood_history %}
+                            {% set latest_mood = student.mood_history[-1] %}
+                            <div class="mood-score text-center mb-2">
+                                {{ latest_mood.score }}/5
+                            </div>
+                            <p class="text-center text-muted">
+                                Logged on {{ latest_mood.date.strftime('%Y-%m-%d %H:%M') }}
+                            </p>
+                        {% else %}
+                            <p class="text-center text-muted">No mood logged today</p>
+                            <div class="d-grid">
+                                <a href="{{ url_for('main.log_mood') }}" class="btn btn-outline-primary">Log Mood</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Appointments -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Upcoming Appointments</h5>
+                <a href="{{ url_for('main.appointments') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if student and student.appointments %}
+                    {% set upcoming = student.appointments|selectattr('date', '>', now)|list %}
+                    {% if upcoming %}
+                        <div class="list-group">
+                            {% for appointment in upcoming[:3] %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ appointment.service_type }}</h6>
+                                        <small>{{ appointment.date.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </div>
+                                    <p class="mb-1">Status: {{ appointment.status }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No upcoming appointments</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted mb-0">No appointments scheduled</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Mood History Summary -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Mood History</h5>
+                <a href="{{ url_for('main.mood_history') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if student and student.mood_history %}
+                    <div class="text-center">
+                        <div class="mood-score mb-2">
+                            {{ (student.mood_history|map(attribute='score')|sum / student.mood_history|length)|round(1) }}/5
+                        </div>
+                        <p class="text-muted">Average Mood</p>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center mb-0">No mood history available</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Support Services -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Support Services</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for service in support_services %}
+                        <a href="{{ url_for('main.book_appointment') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ service.name }}</h6>
+                                <small class="text-muted">{{ service.service_type }}</small>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

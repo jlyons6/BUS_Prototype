@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Log Mood - UniSupport{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Log Your Mood</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.log_mood') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        <label class="form-label">How are you feeling today?</label>
+                        <div class="mood-scale d-flex justify-content-between align-items-center">
+                            {% for subfield in form.score %}
+                                <div class="text-center">
+                                    {{ subfield(class="btn-check", id="score-{{ loop.index }}") }}
+                                    <label class="btn btn-outline-primary" for="score-{{ loop.index }}">
+                                        {{ loop.index }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.score.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.score.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.notes.label(class="form-label") }}
+                        {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=4) }}
+                        {% if form.notes.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.notes.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Optional: Add any notes about your mood or what's affecting it.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.activities.label(class="form-label") }}
+                        {{ form.activities(class="form-select" + (" is-invalid" if form.activities.errors else "")) }}
+                        {% if form.activities.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.activities.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Save Mood Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if student and student.mood_history %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Mood History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for entry in student.mood_history[-3:]|reverse %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Mood Score: {{ entry.score }}/5</h6>
+                                    <small class="text-muted">{{ entry.date.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                {% if entry.notes %}
+                                    <p class="mb-1">{{ entry.notes }}</p>
+                                {% endif %}
+                                {% if entry.activities %}
+                                    <small class="text-muted">Activities: {{ entry.activities }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

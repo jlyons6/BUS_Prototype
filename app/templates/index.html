@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to UniSupport{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">Welcome to UniSupport</h1>
+        <p class="lead mb-4">Your comprehensive student wellbeing platform</p>
+        
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Mood Tracking</h5>
+                        <p class="card-text">Track your daily mood and emotional wellbeing</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Support Services</h5>
+                        <p class="card-text">Book appointments with counsellors and support staff</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Progress Tracking</h5>
+                        <p class="card-text">Monitor your wellbeing journey over time</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not current_user.is_authenticated %}
+        <div class="mt-4">
+            <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-lg me-3">Login</a>
+            <a href="{{ url_for('main.register') }}" class="btn btn-outline-primary btn-lg">Register</a>
+        </div>
+        {% else %}
+        <div class="mt-4">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
