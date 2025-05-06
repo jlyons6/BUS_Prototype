@@ -8,28 +8,27 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">Log Your Mood</h4>
+                    <h4 class="mb-0">Book an Appointment</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('main.log_mood') }}">
+                    <form method="POST" action="{{ url_for('main.book_appointment') }}">
                         {{ form.hidden_tag() }}
                         
                         <div class="mb-3">
-                            {{ form.score.label(class="form-label") }}
-                            {{ form.score(class="form-control", type="range", min="1", max="10", step="1", oninput="this.nextElementSibling.value = this.value") }}
-                            <output class="form-text">5</output>
-                            {% if form.score.errors %}
-                                {% for error in form.score.errors %}
+                            {{ form.service_type.label(class="form-label") }}
+                            {{ form.service_type(class="form-select") }}
+                            {% if form.service_type.errors %}
+                                {% for error in form.service_type.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
                         </div>
                         
                         <div class="mb-3">
-                            {{ form.activities.label(class="form-label") }}
-                            {{ form.activities(class="form-control") }}
-                            {% if form.activities.errors %}
-                                {% for error in form.activities.errors %}
+                            {{ form.date.label(class="form-label") }}
+                            {{ form.date(class="form-control", type="datetime-local") }}
+                            {% if form.date.errors %}
+                                {% for error in form.date.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
@@ -54,22 +53,17 @@
             
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Mood Scale Guide</h5>
+                    <h5 class="mb-0">Available Services</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col">
-                            <h6 class="text-danger">1-3</h6>
-                            <p class="small">Feeling Down</p>
+                    <div class="list-group">
+                        {% for service in services %}
+                        <div class="list-group-item">
+                            <h6 class="mb-1">{{ service.name }}</h6>
+                            <p class="mb-1">{{ service.description }}</p>
+                            <small class="text-muted">Duration: {{ service.duration }} minutes</small>
                         </div>
-                        <div class="col">
-                            <h6 class="text-warning">4-6</h6>
-                            <p class="small">Neutral</p>
-                        </div>
-                        <div class="col">
-                            <h6 class="text-success">7-10</h6>
-                            <p class="small">Feeling Good</p>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>

@@ -3,7 +3,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime
 
 from app import db
-from app.models import User, Student, SupportService
+from app.models import User, Student, SupportService, MoodEntry, Appointment
 from app.forms import LoginForm, RegisterForm, MoodLogForm, AppointmentForm
 from app.main import bp
 
@@ -65,60 +65,62 @@ def dashboard():
 @bp.route('/mood/log', methods=['GET', 'POST'])
 @login_required
 def log_mood():
-    if request.method == 'POST':
+    form = MoodLogForm()
+    if form.validate_on_submit():
         try:
-            score = int(request.form.get('score'))
-            form = MoodLogForm(score)
+            # Create or get student record
+            student = Student.query.filter_by(user_id=current_user.id).first()
+            if not student:
+                student = Student(user_id=current_user.id, name=current_user.username)
+                db.session.add(student)
             
-            if form.validate():
-                # Create or get student record
-                student = Student.query.filter_by(user_id=current_user.id).first()
-                if not student:
-                    student = Student(user_id=current_user.id, name=current_user.username)
-                    db.session.add(student)
-                
-                student.log_mood(score)
-                db.session.commit()
-                flash('Mood logged successfully!', 'success')
-            else:
-                for error in form.errors:
-                    flash(error, 'error')
-        except ValueError:
-            flash('Please enter a valid number', 'error')
-        
-        return redirect(url_for('main.dashboard'))
+            # Create mood entry
+            entry = MoodEntry(
+                student=student,
+                score=int(form.score.data),
+                notes=form.notes.data,
+                activities=form.activities.data
+            )
+            db.session.add(entry)
+            db.session.commit()
+            flash('Mood logged successfully!', 'success')
+            return redirect(url_for('main.dashboard'))
+        except Exception as e:
+            flash(f'Error logging mood: {str(e)}', 'error')
     
-    return render_template('log_mood.html', title='Log Mood')
+    return render_template('log_mood.html', title='Log Mood', form=form)
 
 @bp.route('/appointments/book', methods=['GET', 'POST'])
 @login_required
 def book_appointment():
-    if request.method == 'POST':
-        try:
-            service_type = request.form.get('service_type')
-            date_str = request.form.get('date')
-            date = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
-            
-            form = AppointmentForm(service_type, date)
-            
-            if form.validate():
-                student = Student.query.filter_by(user_id=current_user.id).first()
-                if not student:
-                    student = Student(user_id=current_user.id, name=current_user.username)
-                    db.session.add(student)
-                
-                appointment = student.book_appointment(service_type, date)
-                db.session.commit()
-                flash('Appointment booked successfully!', 'success')
-            else:
-                for error in form.errors:
-                    flash(error, 'error')
-        except ValueError:
-            flash('Invalid date format', 'error')
-        
-        return redirect(url_for('main.dashboard'))
+    form = AppointmentForm()
+    # Get available services for the form
+    services = SupportService.query.all()
+    form.service_type.choices = [(s.service_type, s.name) for s in services]
     
-    return render_template('book_appointment.html', title='Book Appointment', services=support_services)
+    if form.validate_on_submit():
+        try:
+            # Create or get student record
+            student = Student.query.filter_by(user_id=current_user.id).first()
+            if not student:
+                student = Student(user_id=current_user.id, name=current_user.username)
+                db.session.add(student)
+            
+            # Create appointment
+            appointment = Appointment(
+                student=student,
+                service_type=form.service_type.data,
+                date=datetime.strptime(form.date.data, '%Y-%m-%d %H:%M'),
+                status='scheduled'
+            )
+            db.session.add(appointment)
+            db.session.commit()
+            flash('Appointment booked successfully!', 'success')
+            return redirect(url_for('main.dashboard'))
+        except Exception as e:
+            flash(f'Error booking appointment: {str(e)}', 'error')
+    
+    return render_template('book_appointment.html', title='Book Appointment', form=form, services=services)
 
 @bp.route('/mood/history')
 @login_required
