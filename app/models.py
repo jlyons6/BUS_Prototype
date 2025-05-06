@@ -225,6 +225,10 @@ class SupportService(db.Model):
     service_type: so.Mapped[str] = so.mapped_column(sa.String(64))
     available_slots: so.Mapped[list['AppointmentSlot']] = so.relationship(back_populates='service', cascade='all, delete-orphan')
 
+    def __init__(self, name: str, service_type: str):
+        self.name = name
+        self.service_type = service_type
+
     def generate_available_slots(self):
         slots = []
         current_date = datetime.now()
