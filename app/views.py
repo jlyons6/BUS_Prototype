@@ -1,12 +1,124 @@
-from flask import render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.security import generate_password_hash
+from datetime import datetime
 
 from app import app, db
-from app.models import User, SupportRequest, Message
-from app.forms import LoginForm, RegisterForm, SupportRequestForm
+from app.models import User, SupportRequest, Message, Student, SupportService
+from app.forms import LoginForm, RegisterForm, SupportRequestForm, MoodLogForm, AppointmentForm
 import sqlalchemy as sa
 
+# Create a Blueprint for our views
+main = Blueprint('main', __name__)
+
+# Temporary storage (will be replaced with database)
+students = {}
+support_services = [
+    SupportService(1, "Counselling Service", "counselling"),
+    SupportService(2, "Academic Support", "academic"),
+    SupportService(3, "Wellbeing Workshop", "workshop")
+]
+
+@main.route('/')
+def index():
+    return render_template('index.html')
+
+@main.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        student_id = request.form.get('student_id')
+        name = request.form.get('name')
+        
+        if not student_id or not name:
+            flash('Please provide both student ID and name', 'error')
+            return redirect(url_for('main.login'))
+        
+        # Create or retrieve student
+        if student_id not in students:
+            students[student_id] = Student(student_id, name)
+        
+        # In a real app, we'd use session management here
+        return redirect(url_for('main.dashboard'))
+    
+    return render_template('login.html')
+
+@main.route('/dashboard')
+def dashboard():
+    # In a real app, we'd get the current user from the session
+    return render_template('dashboard.html')
+
+@main.route('/mood/log', methods=['GET', 'POST'])
+def log_mood():
+    if request.method == 'POST':
+        try:
+            score = int(request.form.get('score'))
+            form = MoodLogForm(score)
+            
+            if form.validate():
+                # In a real app, we'd get the current user from the session
+                student_id = request.form.get('student_id')
+                if student_id in students:
+                    students[student_id].log_mood(score)
+                    flash('Mood logged successfully!', 'success')
+                else:
+                    flash('Student not found', 'error')
+            else:
+                for error in form.errors:
+                    flash(error, 'error')
+        except ValueError:
+            flash('Please enter a valid number', 'error')
+        
+        return redirect(url_for('main.dashboard'))
+    
+    return render_template('log_mood.html')
+
+@main.route('/appointments/book', methods=['GET', 'POST'])
+def book_appointment():
+    if request.method == 'POST':
+        try:
+            service_type = request.form.get('service_type')
+            date_str = request.form.get('date')
+            date = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
+            
+            form = AppointmentForm(service_type, date)
+            
+            if form.validate():
+                # In a real app, we'd get the current user from the session
+                student_id = request.form.get('student_id')
+                if student_id in students:
+                    appointment = students[student_id].book_appointment(service_type, date)
+                    flash('Appointment booked successfully!', 'success')
+                else:
+                    flash('Student not found', 'error')
+            else:
+                for error in form.errors:
+                    flash(error, 'error')
+        except ValueError:
+            flash('Invalid date format', 'error')
+        
+        return redirect(url_for('main.dashboard'))
+    
+    return render_template('book_appointment.html', services=support_services)
+
+@main.route('/mood/history')
+def mood_history():
+    # In a real app, we'd get the current user from the session
+    student_id = request.args.get('student_id')
+    if student_id in students:
+        history = students[student_id].get_mood_history()
+        return render_template('mood_history.html', history=history)
+    flash('Student not found', 'error')
+    return redirect(url_for('main.dashboard'))
+
+@main.route('/appointments')
+def appointments():
+    # In a real app, we'd get the current user from the session
+    student_id = request.args.get('student_id')
+    if student_id in students:
+        appointments = students[student_id].get_appointments()
+        return render_template('appointments.html', appointments=appointments)
+    flash('Student not found', 'error')
+    return redirect(url_for('main.dashboard'))
 
 @app.route('/')
 def home():
