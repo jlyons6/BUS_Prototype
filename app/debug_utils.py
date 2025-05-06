@@ -1,14 +1,14 @@
 import datetime
 from werkzeug.security import generate_password_hash
 from app import db
-from app.models import User, Task, Message, Group, GroupTaskStatus, Student, SupportService, AppointmentSlot
+from app.models import User, Task, Message, Group, GroupTaskStatus, Student, SupportService, AppointmentSlot, MoodEntry, Appointment
+import random
 
 
 def reset_db():
-    """Reset the database by dropping and recreating all tables."""
+    """Reset the database by dropping all tables and recreating them."""
     db.drop_all()
     db.create_all()
-    print("Database reset complete.")
 
 
 def generate_users():
@@ -63,11 +63,24 @@ def generate_tasks():
 def generate_support_services():
     """Generate and return a list of support service objects."""
     services = [
-        SupportService("Counselling Service", "counselling"),
-        SupportService("Academic Support", "academic"),
-        SupportService("Wellbeing Workshop", "workshop"),
-        SupportService("Mental Health Support", "mental_health"),
-        SupportService("Career Guidance", "career")
+        SupportService(
+            name="Counselling Service",
+            service_type="counselling",
+            description="Professional counselling for mental health support",
+            duration=60
+        ),
+        SupportService(
+            name="Academic Support",
+            service_type="academic",
+            description="Help with study skills and academic challenges",
+            duration=45
+        ),
+        SupportService(
+            name="Wellbeing Workshop",
+            service_type="workshop",
+            description="Group workshops for wellbeing and stress management",
+            duration=90
+        )
     ]
     return services
 
@@ -109,37 +122,89 @@ def generate_group_task_status():
 
 
 def populate_db():
-    """Reset the DB and populate it with new data for testing."""
-    reset_db()
-
-    # Add users
-    users = generate_users()
-    db.session.add_all(users)
+    """Populate the database with test data."""
+    # Create test users
+    users = [
+        User(username='test_student', email='student@test.com', role='student'),
+        User(username='test_staff', email='staff@test.com', role='staff')
+    ]
+    
+    for user in users:
+        user.set_password('password')
+        db.session.add(user)
+    
+    db.session.commit()
+    
+    # Create test student
+    student = Student(
+        user_id=users[0].id,
+        name='Test Student'
+    )
+    db.session.add(student)
+    
+    # Create support services
+    services = [
+        SupportService(
+            name="Counselling Service",
+            service_type="counselling",
+            description="Professional counselling for mental health support",
+            duration=60
+        ),
+        SupportService(
+            name="Academic Support",
+            service_type="academic",
+            description="Help with study skills and academic challenges",
+            duration=45
+        ),
+        SupportService(
+            name="Wellbeing Workshop",
+            service_type="workshop",
+            description="Group workshops for wellbeing and stress management",
+            duration=90
+        )
+    ]
+    
+    for service in services:
+        db.session.add(service)
+    
+    db.session.commit()
+    
+    # Create test mood entries
+    activities = ['studying', 'exercise', 'social', 'rest', 'hobby']
+    for i in range(7):
+        entry = MoodEntry(
+            student=student,
+            score=random.randint(1, 10),
+            notes=f"Test mood entry {i+1}",
+            activities=random.choice(activities),
+            date=datetime.datetime.utcnow() - datetime.timedelta(days=i)
+        )
+        db.session.add(entry)
+    
+    # Create test appointments
+    for i in range(3):
+        appointment = Appointment(
+            student=student,
+            service_type=services[i % len(services)].service_type,
+            date=datetime.datetime.utcnow() + datetime.timedelta(days=i+1),
+            status='scheduled'
+        )
+        db.session.add(appointment)
+    
     db.session.commit()
 
-    # Add tasks
-    tasks = generate_tasks()
-    db.session.add_all(tasks)
-    db.session.commit()
 
-    # Add support services
-    services = generate_support_services()
-    db.session.add_all(services)
-    db.session.commit()
+def register_commands(app):
+    @app.cli.command("init-db")
+    def init_db_command():
+        """Initialize the database with test data."""
+        populate_db()
+        print("Database initialized with test data.")
 
-    # Add students
-    students = generate_students(users)
-    db.session.add_all(students)
-    db.session.commit()
-
-    # Add appointment slots
-    slots = generate_appointment_slots(services)
-    db.session.add_all(slots)
-    db.session.commit()
-
-    # Generate group task status mappings
-    generate_group_task_status()
-
-    print("Database populated with test data.")
+    @app.cli.command("reset-db")
+    def reset_db_command():
+        """Reset the database."""
+        reset_db()
+        print("Database reset complete.")
 
 

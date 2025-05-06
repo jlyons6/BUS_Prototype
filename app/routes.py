@@ -1,11 +1,13 @@
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime
+from flask import Blueprint
 
 from app import db
 from app.models import User, Student, SupportService, MoodEntry, Appointment
 from app.forms import LoginForm, RegisterForm, MoodLogForm, AppointmentForm
-from app.main import bp
+
+bp = Blueprint('main', __name__)
 
 # Temporary storage (will be replaced with database)
 support_services = [
